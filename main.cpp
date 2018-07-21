@@ -42,7 +42,7 @@ void saveData(ofstream &file, vector<Node*> &nodes);
 int main(int argc, char *argv[]){
   //declare output file stream
   ofstream resultsFile("results.txt");
-  Py_Initialize();
+
   float pos [2]= {10.0,0};
   Node parent(pos);//declare parent
 
@@ -56,8 +56,14 @@ int main(int argc, char *argv[]){
   vector<Node*> allNodes = RRTstar(pos,obs1);
   cout << "Success!" <<endl;
   saveData(resultsFile,allNodes);
+  //The following executes the python plotter to show the results
+  system("python plotter.py");
+  // Py_Initialize();
+  // PyRun_SimpleString("import sys");
+  // PyRun_SimpleString("sys.path.append('plotter.py')");
+  // Py_Finalize();
+  //End python script
   cout << allNodes.size() << endl;
-
 }
 
 //the following is a simple linear algorithm to find the closest node
