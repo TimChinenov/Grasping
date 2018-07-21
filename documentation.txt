@@ -1,0 +1,49 @@
+Eigen Linear Algebra
+--------------------
+This needs to be filled out later
+
+1) We placed the eigen folder into ../usr/include/eigen3
+
+Boost.Python Set-up
+--------------------
+This documentation follows the following:
+https://www.boost.org/doc/libs/1_67_0/more/getting_started/unix-variants.html
+
+1) Download boost_1_67_0.tar.bz2, preferably into the Downloads folder
+
+2) Navigate to the download folder, or the folder you placed the file
+
+3) Navigate to the folder you want to place boost
+(I am placing it in ../usr/include/)
+
+4) Run command
+sudo tar --bzip2 -xf ../../home/timmy/Downloads/boost_1_67_0.tar.bz2
+Your path will differ by user name and where you placed your folder.
+
+  (Things to keep in mind now...)
+    -the root directory of boost is sometimes referred to as $BOOST_ROOT
+    -To compile anything in boost, you need a directory containing the
+      boost/subdirectory in your #include path
+    -Include directives like:
+      #include <boost/whatever.hpp>
+
+5)  navigate to:
+    cd path/to/boost_1_67_0
+
+6) call ./bootstrap.sh --prefix=path/to/installation/prefix. (I used /usr/local)
+
+7) run ./b2 install (If you're installing everything this may take some time >10min)
+
+8) After installation, navigate too:
+  /usr/include/boost_1_67_0/libs/python/example/quickstart
+
+9) You will want to install bjam:
+    sudo apt install libboost1.58-tools-dev
+
+10) run bjam toolset=gcc --verbose-test test
+
+10a) I additionally had to run sudo apt-get install libboost-python-dev
+---------------------------------------------
+
+
+Need to somehow path the bjam to /boost/
