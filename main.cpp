@@ -6,6 +6,8 @@
 #include <cstdbool>
 #include <Eigen/Dense>
 #include <math.h>
+#include <fstream>
+#include <string>
 //following are needed for random numbers
 #include <stdlib.h>
 #include <time.h>
@@ -33,11 +35,13 @@ vector<Node*> chainNodes(Node &start, Node &end, float step);
 float dist(const Vector2f  &pt1,const Vector2f  &pt2);
 void makeRelation(Node &parent,Node &child);
 void addNodes(vector<Node> &allN, vector<Node*> &newN);
-// void clearOldNodes(vector<*Node> newN);
 vector<Node*> RRTstar(float Qstart [],Obs &obstacle);
+void saveData(ofstream &file, vector<Node*> &nodes);
 //
 
 int main(int argc, char *argv[]){
+  //declare output file stream
+  ofstream resultsFile("results.txt");
   Py_Initialize();
   float pos [2]= {10.0,0};
   Node parent(pos);//declare parent
@@ -50,6 +54,7 @@ int main(int argc, char *argv[]){
   Obs obs1(coef,obsCenter);
   srand(time(NULL));
   vector<Node*> allNodes = RRTstar(pos,obs1);
+  saveData(resultsFile,allNodes);
   cout << allNodes.size() << endl;
   cout << "Success!";
 }
@@ -328,4 +333,30 @@ vector<Node*> RRTstar(float Qstart [],Obs &obstacle){
     cout << endl;
   }
   return AllNodes;
+}
+
+//Function takes a file stream and nodes and saves
+//each nodes positions along with its childs positions in the format:
+//(x,y);(x1,y1)(x2,y2)....(xm,yn)
+//currently designed poorly, perform using DFS in the future
+void saveData(ofstream &file, vector<Node*> &nodes){
+  string line = "";
+  Vector2f pos;
+  for(int itr = 0; itr < nodes.size();itr++)
+  {
+    pos = nodes[itr]->getPosition();
+    line = "("+to_string(pos[0])+","+to_string(pos[1])+");";
+    vector<Node*> children = nodes[itr]->getChildren();
+    //iterate through children of parent.
+    for(int jtr = 0; jtr < children.size();jtr++){
+      //get position of the child
+      Vector2f cpos = children[jtr]->getPosition();
+      line = line + "("+to_string(cpos[0])+","+to_string(cpos[1])+")";
+    }
+    line = line + "\n";
+    //print line to the file
+    file << line;
+    //refresh line string value
+    line = "";
+  }
 }
