@@ -1,4 +1,4 @@
-//g++ -std=c++11 -I/usr/include/eigen3 main.cpp node.cpp obs.cpp -o test
+//g++ -std=c++11 -I/usr/include/python2.7 -I/usr/include/eigen3  main.cpp node.cpp obs.cpp -lpython2.7 -o test
 #include <stdio.h>
 #include <iostream>
 #include <vector>
@@ -9,6 +9,8 @@
 //following are needed for random numbers
 #include <stdlib.h>
 #include <time.h>
+#include <boost/python.hpp>
+#include <Python.h>
 /////////////////////////////////////////
 #include "node.h"
 #include "obs.h"
@@ -36,6 +38,7 @@ vector<Node*> RRTstar(float Qstart [],Obs &obstacle);
 //
 
 int main(int argc, char *argv[]){
+  Py_Initialize();
   float pos [2]= {10.0,0};
   Node parent(pos);//declare parent
 
@@ -317,10 +320,7 @@ vector<Node*> RRTstar(float Qstart [],Obs &obstacle){
       // cout << (*NewNodes[itr]).getPosition() << endl;
       AllNodes.push_back(NewNodes[itr]);//<----Something wrong is happening here. The nodes are getting cleared?
     }
-    // count++;
-    // if (count > 10){
-    //   break;
-    // }
+
 
   }
   for(int i=0;i<AllNodes.size();i++){
