@@ -54,9 +54,10 @@ int main(int argc, char *argv[]){
   Obs obs1(coef,obsCenter);
   srand(time(NULL));
   vector<Node*> allNodes = RRTstar(pos,obs1);
+  cout << "Success!" <<endl;
   saveData(resultsFile,allNodes);
   cout << allNodes.size() << endl;
-  cout << "Success!";
+
 }
 
 //the following is a simple linear algorithm to find the closest node
@@ -346,13 +347,13 @@ void saveData(ofstream &file, vector<Node*> &nodes){
   {
     pos = nodes[itr]->getPosition();
     line = "("+to_string(pos[0])+","+to_string(pos[1])+");";
-    vector<Node*> children = nodes[itr]->getChildren();
-    //iterate through children of parent.
-    for(int jtr = 0; jtr < children.size();jtr++){
-      //get position of the child
-      Vector2f cpos = children[jtr]->getPosition();
-      line = line + "("+to_string(cpos[0])+","+to_string(cpos[1])+")";
-    }
+    // vector<Node*> children = nodes[itr]->getChildren();
+    // //iterate through children of parent.
+    // for(int jtr = 0; jtr < children.size();jtr++){
+    //   //get position of the child
+    //   Vector2f cpos = children[jtr]->getPosition();
+    //   line = line + "("+to_string(cpos[0])+","+to_string(cpos[1])+")";
+    // }
     line = line + "\n";
     //print line to the file
     file << line;
