@@ -36,20 +36,18 @@ void makeRelation(Node &parent,Node &child);
 void addNodes(vector<Node> &allN, vector<Node*> &newN);
 vector<Node*> RRTstar(float Qstart [],Obs &obstacle);
 void saveData(ofstream &file, vector<Node*> &nodes);
+void savePath(ofstream &file, Node* node);
 //
 
 int main(int argc, char *argv[]){
   //declare output file stream
   ofstream resultsFile("results.txt");
-
-  float pos [2]= {0,10};
-  Node parent(pos);//declare parent
-
+  ofstream pathFile("path.txt");
+  float pos[2] = {0,10};
   //
   //create obstacle item
   float obsCenter[2] = {5,1.45}; //temp values for obstacle center
   float coef = 0.5;
-  Node* p = & parent;
   Obs obs1(coef,obsCenter);
   srand(time(NULL));
   vector<Node*> allNodes = RRTstar(pos,obs1);
@@ -60,6 +58,13 @@ int main(int argc, char *argv[]){
   cout << "Number of nodes generated: " << allNodes.size() << endl;
   cout << "Success!" << endl;
   saveData(resultsFile,allNodes);
+  //check if the final node completed the path
+  if(obs1.isInside(allNodes[allNodes.size()-1]->getPosition()))
+  {
+    //if it did, then we can generate a path
+    cout << "path was found" << endl;
+    savePath(pathFile,allNodes[allNodes.size()-1]);
+  }
   //The following executes the python plotter to show the results
   system("python plotter.py");
   // Py_Initialize();
@@ -246,7 +251,7 @@ void addNodes(vector<Node> &allN, vector<Node*> &newN){
 
 vector<Node*> RRTstar(float Qstart [],Obs &obstacle){
   float RAD = 1.5; //neighbor radius
-  int NODE_SIZE = 1000; //lower bound of of Nodes to produce
+  int NODE_SIZE = 500; //lower bound of of Nodes to produce
   int counter = 0; //how many iterations have been completed
   float STEP_SIZE = 0.45; //step discretization of nodes
   //boolean that keeps track of whether a node in the obs has been
@@ -278,9 +283,8 @@ vector<Node*> RRTstar(float Qstart [],Obs &obstacle){
           Vector2f finalPos = (NewNodes[itr]->getPosition());
           float Qend[2] = {finalPos(0),finalPos(1)};
           //create new node representing the end
-          Node dest(Qend);
-          end = &dest;
-          makeRelation(*(NewNodes[itr]),dest);
+          end = new Node(Qend);
+          makeRelation(*(NewNodes[itr]),*end);
           break;
         }
       }
@@ -288,7 +292,8 @@ vector<Node*> RRTstar(float Qstart [],Obs &obstacle){
     //now generate random (x,y)
     float x = static_cast <float> (rand())/(static_cast <float> (RAND_MAX/12));
     float y = static_cast <float> (rand())/(static_cast <float> (RAND_MAX/10));
-    cout << "(x,y) = (" << x << ","<<y<<")"<< endl;
+    if(x > 12 || y >10 || x<0 || y <0 ){continue;}
+    // cout << "(x,y) = (" << x << ","<<y<<")"<< endl;
     //generate a new node with the random position
     float new_pos [2] = {x,y};
     Node* new_node = new Node(new_pos);
@@ -319,17 +324,21 @@ vector<Node*> RRTstar(float Qstart [],Obs &obstacle){
                           bestNode->getPosition()));
      }
     //rewireing of the path will be added in a future patch :)
-    NewNodes.clear();
-    NewNodes = chainNodes(*bestNode,*new_node,0.45);
+    // NewNodes.clear();
+    // NewNodes = chainNodes(*bestNode,*new_node,0.45);
     //
+    NewNodes = {new_node};
     makeRelation(*bestNode,*(NewNodes[0]));
     for(int itr = 0; itr< NewNodes.size();itr++){
     //   // cout << (*NewNodes[itr]).getPosition() << endl;
        AllNodes.push_back(NewNodes[itr]);//<----Something wrong is happening here. The nodes are getting cleared?
     }
   }
-  for(int k = 0; k < AllNodes.size();k++){
-    cout << AllNodes[k]->getPosition() <<endl;
+  // for(int k = 0; k < AllNodes.size();k++){
+  //   cout << AllNodes[k]->getPosition() <<endl;
+  // }
+  if(AllNodes.size() > NODE_SIZE  && inObs != false){
+    AllNodes.push_back(end);
   }
   return AllNodes;
 }
@@ -359,5 +368,17 @@ void saveData(ofstream &file, vector<Node*> &nodes){
     file << line;
     //refresh line string value
     line = "";
+  }
+}
+
+void savePath(ofstream &file, Node* node){
+  Node* tracker = node;
+  string line = "";
+  while(tracker != NULL){
+    Vector2f cpos = tracker->getPosition();
+    line = "("+to_string(cpos[0])+","+to_string(cpos[1])+")\n";
+    file << line;
+    line = "";
+    tracker = tracker->getParent();
   }
 }
