@@ -31,8 +31,9 @@ Node* Node::getParent(){
   return Parent;
 }
 
-vector<Node*> Node::getChildren(){
-  return children;
+vector<Node*>* Node::getChildren(){
+  vector<Node*>* p = &children;
+  return p;
 }
 
 bool Node::getVisStat(){

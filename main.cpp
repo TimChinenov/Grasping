@@ -1,4 +1,3 @@
-//g++ -std=c++11 -I/usr/include/python2.7 -I/usr/include/eigen3  main.cpp node.cpp obs.cpp -lpython2.7 -o test
 #include <stdio.h>
 #include <iostream>
 #include <vector>
@@ -11,7 +10,7 @@
 //following are needed for random numbers
 #include <stdlib.h>
 #include <time.h>
-#include <boost/python.hpp>
+//python calls
 #include <Python.h>
 /////////////////////////////////////////
 #include "node.h"
@@ -43,7 +42,7 @@ int main(int argc, char *argv[]){
   //declare output file stream
   ofstream resultsFile("results.txt");
 
-  float pos [2]= {10.0,0};
+  float pos [2]= {0,10};
   Node parent(pos);//declare parent
 
   //
@@ -54,7 +53,12 @@ int main(int argc, char *argv[]){
   Obs obs1(coef,obsCenter);
   srand(time(NULL));
   vector<Node*> allNodes = RRTstar(pos,obs1);
-  cout << "Success!" <<endl;
+  // for(int j = 0; j<allNodes.size();j++)
+  // {
+  //   cout << (allNodes[j]->getValue()) << endl;
+  // }
+  cout << "Number of nodes generated: " << allNodes.size() << endl;
+  cout << "Success!" << endl;
   saveData(resultsFile,allNodes);
   //The following executes the python plotter to show the results
   system("python plotter.py");
@@ -63,7 +67,6 @@ int main(int argc, char *argv[]){
   // PyRun_SimpleString("sys.path.append('plotter.py')");
   // Py_Finalize();
   //End python script
-  cout << allNodes.size() << endl;
 }
 
 //the following is a simple linear algorithm to find the closest node
@@ -224,12 +227,10 @@ float dist(const Vector2f &pt1,const Vector2f &pt2)
 //the following function handles making a child-parent relation
 //between two nodes
 void makeRelation(Node &parent,Node &child){
-  Node *p = &parent; //make pointer to the parent - use '&' to select elements memory position
+  Node *p = &parent; //make pointer to the parent
   Node *c = &child; //make pointer to the child
-  parent.addChild(c); //add chid to the parent
-  vector<Node*> x = parent.getChildren(); // get the children (the one you just added)
+  parent.addChild(c); //add child to the parent
   child.setParent(p); // add a parent to the child
-  Node* y = child.getParent(); //create a pointer to the child's parent
 }
 
 //
@@ -244,7 +245,7 @@ void addNodes(vector<Node> &allN, vector<Node*> &newN){
 // }
 
 vector<Node*> RRTstar(float Qstart [],Obs &obstacle){
-  float RAD = 5; //neighbor radius
+  float RAD = 1.5; //neighbor radius
   int NODE_SIZE = 1000; //lower bound of of Nodes to produce
   int counter = 0; //how many iterations have been completed
   float STEP_SIZE = 0.45; //step discretization of nodes
@@ -269,8 +270,6 @@ vector<Node*> RRTstar(float Qstart [],Obs &obstacle){
   while(AllNodes.size() < NODE_SIZE  || inObs == false){
     //check if any of the newly added nodes are in the obs
     //if a new point is in the obstacle, a path is found
-    // cout<<"size of AllNodes: "<<AllNodes.size() << endl;
-    // cout<<"size of NewNodes: "<<NewNodes.size() <<endl;
     if(!inObs){
       for(int itr = 0; itr < NewNodes.size(); itr++)
       {
@@ -289,55 +288,48 @@ vector<Node*> RRTstar(float Qstart [],Obs &obstacle){
     //now generate random (x,y)
     float x = static_cast <float> (rand())/(static_cast <float> (RAND_MAX/12));
     float y = static_cast <float> (rand())/(static_cast <float> (RAND_MAX/10));
-    // cout << "(x,y) = (" << x << ","<<y<<")"<< endl;
-    //generate a new node with teh random position
+    cout << "(x,y) = (" << x << ","<<y<<")"<< endl;
+    //generate a new node with the random position
     float new_pos [2] = {x,y};
-    Node new_node(new_pos);
+    Node* new_node = new Node(new_pos);
     //find the closest node by distance
     Node* closest;
     closest = findClosest(new_pos, AllNodes);
-    // cout<< "the position of the closest: " << closest->getPosition() <<endl;
-
-    //find the distance between the two
-
-    float clstDist = dist(new_node.getPosition(),closest->getPosition());
+    // //find the distance between the two
+    float clstDist = dist(new_node->getPosition(),closest->getPosition());
     //set the value of the new node to the distance of the closest node
     //plus the value of the closest node
-    cout << "closests position" << closest->getPosition() << endl;
-    cout << "closests value" << closest->getValue() << endl;
-
-    new_node.setValue(clstDist + closest->getValue());
+    // // cout << "closests position" << closest->getPosition() << endl;
+    // // cout << "closests value" << closest->getValue() << endl;
+    new_node->setValue(clstDist + closest->getValue());
     //find the neighbors of the new Node
     // cout <<"The new nodes position: " << new_node.getPosition() << endl;
-    cout <<"The new nodes value: " << new_node.getValue() << endl;
-
-    vector<Node*> neighbors = findNeighbors(new_node,AllNodes,RAD);
-    Node* bestNode = bestValue(new_node,neighbors);
+    // cout <<"The new nodes value: " << new_node.getValue() << endl;
+    vector<Node*> neighbors = findNeighbors(*new_node,AllNodes,RAD);
+    Node* bestNode = bestValue(*new_node,neighbors);
     //check if a better node was found
-    if(bestNode->getValue() == -1){
-      //if not, set the best node to the closest node.
-      bestNode = closest;
+    if(bestNode->getValue() == -1)
+    {
+       //if not, set the best node to the closest node.
+       bestNode = closest;
     }
     else{
-      //other wise set the new nodes cost.
-      new_node.setValue(bestNode->getValue() + dist(new_node.getPosition(),bestNode->getPosition()));
-    }
+       //other wise set the new nodes cost.
+       new_node->setValue(bestNode->getValue() + dist(new_node->getPosition(),
+                          bestNode->getPosition()));
+     }
     //rewireing of the path will be added in a future patch :)
-    // clearOldNodes(NewNodes);
     NewNodes.clear();
-    NewNodes = chainNodes(*bestNode,new_node,0.45);
-
+    NewNodes = chainNodes(*bestNode,*new_node,0.45);
+    //
     makeRelation(*bestNode,*(NewNodes[0]));
     for(int itr = 0; itr< NewNodes.size();itr++){
-      // cout << (*NewNodes[itr]).getPosition() << endl;
-      AllNodes.push_back(NewNodes[itr]);//<----Something wrong is happening here. The nodes are getting cleared?
+    //   // cout << (*NewNodes[itr]).getPosition() << endl;
+       AllNodes.push_back(NewNodes[itr]);//<----Something wrong is happening here. The nodes are getting cleared?
     }
-
-
   }
-  for(int i=0;i<AllNodes.size();i++){
-    cout << AllNodes[i]->getValue()<<endl;
-    cout << endl;
+  for(int k = 0; k < AllNodes.size();k++){
+    cout << AllNodes[k]->getPosition() <<endl;
   }
   return AllNodes;
 }
@@ -353,13 +345,15 @@ void saveData(ofstream &file, vector<Node*> &nodes){
   {
     pos = nodes[itr]->getPosition();
     line = "("+to_string(pos[0])+","+to_string(pos[1])+");";
-    // vector<Node*> children = nodes[itr]->getChildren();
-    // //iterate through children of parent.
-    // for(int jtr = 0; jtr < children.size();jtr++){
-    //   //get position of the child
-    //   Vector2f cpos = children[jtr]->getPosition();
-    //   line = line + "("+to_string(cpos[0])+","+to_string(cpos[1])+")";
-    // }
+    vector<Node*>* children = nodes[itr]->getChildren();
+    if((*children).size() < 1000){
+      //iterate through children of parent.
+      for(int jtr = 0; jtr < (*children).size();jtr++){
+        //get position of the child
+        Vector2f cpos = (*children)[jtr]->getPosition();
+        line = line + "("+to_string(cpos[0])+","+to_string(cpos[1])+")";
+      }
+    }
     line = line + "\n";
     //print line to the file
     file << line;

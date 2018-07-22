@@ -25,7 +25,7 @@ class Node{
     //getters
     Vector2f getPosition();
     Node* getParent();
-    vector<Node*> getChildren();
+    vector<Node*>* getChildren();
     bool getVisStat();
     double getValue();
     //setters
